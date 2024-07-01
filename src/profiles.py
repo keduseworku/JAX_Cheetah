@@ -2,27 +2,28 @@ import jax
 import jax.numpy as jnp
 from jax import jit
 from .constants import Grav_const
-from .input import rho_crit_0, Omega_m, Omega_b, z_end
+from .input import rho_crit_0, z_end, Omega_m, Omega_b
 from .units import UNITS
 
 @jit
 def I_func(c):
     return jnp.log(1 + c) - (c / (1 + c))
 
-@jit
-def mod_func(redshift):
-    ## modulation function for the DM halo growth rate ##
+
+@partial(jit, static_argnums=(1,))
+def mod_func(redshift, power=1):
+    ## modulation function for the DM halo growth rate. Power is optional arg, 1 for linear growth by default ##
     z_i = z_end
     #200 times critical density at previous redshift
     z_0 = ((1 + z_i) / 200**(1/3)) - 1
-    mod = jnp.select([redshift >= z_0], [((z_i - redshift) / (z_i - z_0))], default=1)
+    mod = jnp.select([redshift >= z_0], [((z_i - redshift) / (z_i - z_0))**power], default=1)
     return mod
 
 
 @jit
 def dPhidxi_NFW(pos, redshift, Mh):
-    x, y = pos
-    r = jnp.sqrt(jnp.power(x, 2.0) + jnp.power(y, 2.0))
+    y, z = pos
+    r = jnp.sqrt(jnp.power(y, 2.0) + jnp.power(z, 2.0))
     Delta_vir = 200.0
     conc = jax.lax.select(
         redshift >= 4,
@@ -60,7 +61,7 @@ def dPhidxi_NFW(pos, redshift, Mh):
         * (r ** -2)
         * mod_func(redshift)
         * Mh
-        * result) * jnp.array([x / r, y / r], dtype=jnp.float64)
+        * result) * jnp.array([y / r, z / r], dtype=jnp.float64)
 
 @jit
 def dPhidxi_hernquist(pos, redshift, Mh):
