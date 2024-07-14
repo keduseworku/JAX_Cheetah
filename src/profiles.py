@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 from jax import jit
 from .constants import Grav_const
-from .input import rho_crit_0, z_end, Omega_m, Omega_b
+from .input import rho_crit_0, z_end, Omega_m, Ri, r200, rs
 from .units import UNITS
 
 @jit
@@ -16,7 +16,7 @@ def mod_func(redshift, power=1):
     z_i = z_end
     #200 times critical density at previous redshift
     z_0 = ((1 + z_i) / 200**(1/3)) - 1
-    mod = jnp.select([redshift >= z_0], [((z_i - redshift) / (z_i - z_0))**power], default=1)
+    mod = jnp.select([redshift <= z_0, redshift < z_i], [1, ((z_i - redshift) / (z_i - z_0))**power], default=0)
     return mod
 
 
@@ -50,10 +50,10 @@ def dPhidxi_NFW(pos, redshift, Mh):
         ),
     )
 
-    R200 = (3.0 * Mh / (4 * jnp.pi * Delta_vir * rho_crit_0)) ** (1.0 / 3)
-    Rs = R200 / conc
+    #R200 = (3.0 * Mh / (4 * jnp.pi * Delta_vir * rho_crit_0 * Omega_m)) ** (1.0 / 3)
+    #Rs = R200 / conc
 
-    result = jnp.select([r < (R200 * (1 + redshift)), r < (R200 * (1 + z_end))], [(I_func((r / Rs) / (1 + redshift)) / I_func(conc)) - (r / ((1 + z_end) * R200)) ** 3, 1 - (r / ((1 + z_end) * R200)) ** 3], default=0)
+    result = jnp.select([r < (r200 * (1 + redshift)), r < (r200 * (1 + z_end))], [(I_func((r / rs) / (1 + redshift)) / I_func(conc)) - (r / ((1 + z_end) * r200)) ** 3, 1 - (r / ((1 + z_end) * r200)) ** 3], default=0)
 
     return (
         Grav_const
@@ -63,17 +63,7 @@ def dPhidxi_NFW(pos, redshift, Mh):
         * Mh
         * result) * jnp.array([y / r, z / r], dtype=jnp.float64)
 
-@jit
-def dPhidxi_hernquist(pos, redshift, Mh):
-    y, z = pos
-    Mb = (Omega_b / Omega_m) * Mh * mod_func(redshift)
-    r = jnp.sqrt(jnp.power(y, 2.0) + jnp.power(z, 2.0))
-    Delta_vir = 200.0
-    Rvir = (3.0 * Mh / (4 * jnp.pi * Delta_vir * rho_crit_0)) ** (1.0 / 3)
-    a = Rvir * 2e-1
-    return (Grav_const * Mb / jnp.power(r + a, 2.0)) * jnp.array([y / r, z / r])
-
 
 @jit
 def dPhidxi_tot(pos, redshift, Mh):
-    return dPhidxi_NFW(pos, redshift, Mh) #+ dPhidxi_hernquist(pos, redshift, Mh)
+    return dPhidxi_NFW(pos, redshift, Mh)

@@ -33,3 +33,22 @@ def density_trapz(f_array, p_array, phi_array):
     p_integral = jax.scipy.integrate.trapezoid(-mu_integral * p_array**2, p_array)
     return p_integral / (2.0 * np.pi)**2
 
+
+@jit
+def density_trapz_integrands(f_array, p_array, phi_array):
+    mu_integral = jax.scipy.integrate.trapezoid(f_array, jnp.cos(phi_array), axis=-1)
+
+    #mu_integral is negative because our theta range goes is [1,-1] while mu is [-1,1]
+    p_integrand = -mu_integral #* p_array**2
+    return p_integrand
+
+
+
+@jit
+def background_dens(p_array):
+    integral = jax.scipy.integrate.trapezoid(f_FD(p_array) * p_array**2, p_array)
+    z_0 = ((1 + z_end) / 200**(1/3)) - 1
+    n_z_factor = 1 / (2*np.pi**2)
+    return n_z_factor * integral
+
+

@@ -4,14 +4,13 @@ from .units import UNITS
 
 
 # Cosmological parameters
-Omega_m = 0.3
-Omega_b = 0.05
+Omega_m = 0.315
 h = 0.67
 rho_crit_0 = rho_crit_0_over_hsq * h**2
 
 # Redshift range
 z_start = 0.0
-z_end = 4.85
+z_end = 4.848
 z_samples = 100
 z_array = jnp.linspace(z_start, z_end, z_samples)
 
@@ -25,8 +24,12 @@ Mh_samples = 1
 Mh_array = jnp.array([1e12 * UNITS.MSun]) #jnp.geomspace(Mh_min, Mh_max, Mh_samples)
 
 # Distance range
-r_min = 1e-3 * UNITS.Mpc
-r_max = 1e1 * UNITS.Mpc
+Ri = 1.77 * (Mh_array[0] / 1e12 / UNITS.MSun)**(1/3)
+r200 = Ri / (1 + z_end)
+rs = r200/9
+
+r_min = (rs / 10) * UNITS.Mpc
+r_max = (Ri * 3) * UNITS.Mpc 
 r_samples = 20
 r_array = jnp.geomspace(r_min, r_max, r_samples)
 

@@ -54,11 +54,7 @@ if __name__ == "__main__":
     print("Solved equations, proceeding to computing overdensities...")
 
     density_contrast = jnp.zeros((Mh_samples, r_samples, mass_samples))
-    z_0 = ((1 + z_end) / 200**(1/3)) - 1
-    n_z_factor = (1 + z_0)**3
-    n_FD_SM = 3.0 * 1.202 * Tnu_0**3 / 4.0 / jnp.pi**2
-    n_FD_SM = n_FD_SM / n_z_factor
-    #print(f'the n_z factor:{n_z_factor}')
+    n_FD_SM = utils.background_dens(p_array)
 
     for num_Mh in range(Mh_samples):
         for num_r in range(r_samples):
@@ -71,10 +67,25 @@ if __name__ == "__main__":
                 / n_FD_SM
             )
         
-            
+    
+    density_integrands = jnp.zeros((Mh_samples, r_samples, mass_samples, p_samples))
+    for num_Mh in range(Mh_samples):
+        for num_r in range(r_samples):
+            for num_p in range(p_samples):
+                density_integrands = density_integrands.at[num_Mh, num_r,:].set(
+                    vmap(utils.density_trapz_integrands, in_axes=(0, 0, None))(
+                        f_array[:, :, :, num_r, num_Mh],
+                        p_array * mass_array[:, None] / mass_fid,
+                        theta_array,
+                    )
+                    * p_array**2
+                )
+
+
     end = time.time()
     print("Saving overdensities...")
-    jnp.save('overdensity_1e12MSun.npy', density_contrast)
+    jnp.save('overdensities_1e12MSun.npy', density_contrast)
+    jnp.save('integrands_1e12Msun.npy', density_integrands)
     print("Time elapsed: ", end - start)
     print(density_contrast)
 
