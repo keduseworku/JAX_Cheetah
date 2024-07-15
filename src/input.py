@@ -26,7 +26,6 @@ Mh_array = jnp.array([1e12 * UNITS.MSun]) #jnp.geomspace(Mh_min, Mh_max, Mh_samp
 # Distance range
 Ri = 1.77 * (Mh_array[0] / 1e12 / UNITS.MSun)**(1/3)
 r200 = Ri / (1 + z_end)
-rs = r200/9
 
 r_min = (rs / 10) * UNITS.Mpc
 r_max = (Ri * 3) * UNITS.Mpc 

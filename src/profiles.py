@@ -51,7 +51,7 @@ def dPhidxi_NFW(pos, redshift, Mh):
     )
 
     #R200 = (3.0 * Mh / (4 * jnp.pi * Delta_vir * rho_crit_0 * Omega_m)) ** (1.0 / 3)
-    #Rs = R200 / conc
+    rs = r200 / conc
 
     result = jnp.select([r < (r200 * (1 + redshift)), r < (r200 * (1 + z_end))], [(I_func((r / rs) / (1 + redshift)) / I_func(conc)) - (r / ((1 + z_end) * r200)) ** 3, 1 - (r / ((1 + z_end) * r200)) ** 3], default=0)
 
